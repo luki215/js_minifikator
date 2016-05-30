@@ -1,0 +1,36 @@
+# globalni promenne, hlavni fce 
+#$javascriptIn = "../angular.js/src/Angular_orig.js"
+$javascriptIn = "../angular.js/src/zkouska.js"
+$javascriptOut = "../angular.js/src/Angular.js"
+$outputFile = File.new($javascriptOut, "w")
+#reservovaná slova
+$reserved_words = File.read("javascript_reserved.json");
+require_relative "MinifyFactory"
+
+
+
+  def tiskni(co)
+    
+    co.gsub! " ", "\n"
+    co.each_line do |line|
+      $outputFile.print(line)     
+      print(co) 
+    end
+    
+  end
+
+ minify = MinifyFactory.new
+
+
+file = ""
+File.open($javascriptIn, "r") do |f|
+  f.each_line do |line|
+    file+=line
+  end
+end
+
+    vysledek =minify.zmimifikuj(file)
+    tiskni(vysledek)
+
+
+

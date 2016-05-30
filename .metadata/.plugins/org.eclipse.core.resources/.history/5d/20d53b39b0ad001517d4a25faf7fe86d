@@ -1,0 +1,78 @@
+require 'json'
+
+class MinifyFactory
+  
+  def initialize
+    @zpracovavanyRadek = ""
+    @status =  {
+          inComment: false
+    } 
+    #hash klicovych js slov, kazdy zaznam obsahuje 2 bool hodnoty - jestli zachovat mezeru pred a mezeru po
+    @klicova_slova = JSON.parse($reserved_words)
+  end
+  
+  
+  def zpracujRadek(radek)
+    @zpracovavanyRadek = radek
+    vyresKomentare
+    return @zpracovavanyRadek if @zpracovavanyRadek.empty?
+    vyresMezery
+    return @zpracovavanyRadek if @zpracovavanyRadek.empty?
+    
+    
+    @zpracovavanyRadek
+  end
+  
+  
+  private 
+  
+  
+  #zpracovává komentáře..
+  def vyresKomentare
+    #je v zakomentovaném
+    if @status[:inComment] 
+      if @zpracovavanyRadek.include?("*/") 
+        @zpracovavanyRadek = @zpracovavanyRadek.split("*/").drop(1).join("*/")
+        @status[:inComment] = false
+        vyresKomentare if @zpracovavanyRadek.include?("/*")
+      else
+        @zpracovavanyRadek = ""
+      end        
+    #není v zakomentovaném
+    else      
+      @zpracovavanyRadek = (@zpracovavanyRadek.gsub!("/*", "*/") || @zpracovavanyRadek).split("*/")
+      @status[:inComment] = (@zpracovavanyRadek.size%2==0)? true : false
+      @zpracovavanyRadek = @zpracovavanyRadek.values_at(* @zpracovavanyRadek.each_index.select {|i| i.even?}).join(" ")
+      #jednoradkove komenty
+      if @zpracovavanyRadek.include?("//")
+        @zpracovavanyRadek = @zpracovavanyRadek.split("//").first;
+      end
+    end
+    
+  end 
+
+    #zpracovává bílé znaky.. 
+  def vyresMezery
+    # prazdne radky
+    if @zpracovavanyRadek.strip.empty?
+      @zpracovavanyRadek = ""
+      return true    
+    end
+    
+    @zpracovavanyRadek = @zpracovavanyRadek.split(/w/)
+    puts @zpracovavanyRadek.inspect
+    @zpracovavanyRadek.each_with_index do |vyraz, i|
+      #chceme zkracovat vse co neni v retezci
+      if(i%2!=0)
+         
+      end
+    end
+    
+    
+  
+  
+    
+  end
+
+  
+end

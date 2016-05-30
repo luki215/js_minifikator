@@ -1,0 +1,25 @@
+# globalni promenne, hlavni fce 
+$javascriptIn = "../angular.js/src/Angular_orig.js"
+#$javascriptIn = "../angular.js/src/zkouska.js"
+$javascriptOut = "../angular.js/src/Angular.js"
+$outputFile = File.new($javascriptOut, "w")
+
+require_relative "MinifyFactory"
+
+
+  def tiskni(co)    
+    $outputFile.print(co)
+    print(co)
+  end
+
+ minify = MinifyFactory.new
+
+  File.foreach($javascriptIn) do |jsInLine|
+    
+    radek = minify.zpracujRadek(jsInLine)
+    tiskni(radek)
+    
+  end 
+  
+
+

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="com.aptana.ruby.debug.core.launchConfigurationType">
+<stringAttribute key="com.aptana.ruby.debug.ATTR_FILE_NAME" value="/home/brezina/skola/zapoctak/ruby/main.rb"/>
+<stringAttribute key="com.aptana.ruby.debug.ATTR_PROGRAM_ARGUMENTS" value=""/>
+<stringAttribute key="com.aptana.ruby.debug.ATTR_VM_ARGUMENTS" value=""/>
+<stringAttribute key="com.aptana.ruby.debug.ATTR_WORKING_DIR" value="/home/brezina/skola/zapoctak/ruby"/>
+<listAttribute key="org.eclipse.debug.ui.favoriteGroups">
+<listEntry value="org.eclipse.debug.ui.launchGroup.run"/>
+</listAttribute>
+</launchConfiguration>

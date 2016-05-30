@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item value="true" key="wrap"/>
+		<item value="false" key="isRegEx"/>
+		<item value="false" key="casesensitive"/>
+		<item value="false" key="wholeword"/>
+		<item value="binding.pry" key="selection"/>
+		<list key="findhistory">
+			<item value="binding.pry"/>
+			<item value="@zpracovavanyRadek"/>
+			<item value="pry"/>
+			<item value="puts"/>
+			<item value="/*"/>
+			<item value="&#x09;prototype"/>
+			<item value="&#x09;"/>
+		</list>
+	</section>
+</section>

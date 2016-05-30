@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+
+require 'pry'
+require 'json'
+require_relative "MinifyFactory2"
+
+
+
+# globalni promenne, hlavni fce 
+#$javascriptIn = "../angular.js/src/Angular_orig.js"
+$javascriptIn = ""
+$javascriptOut = ""
+#reservovaná slova
+reserved_words = File.read("#{File.dirname(__FILE__)}/javascript_reserved.json");
+$klicova_slova = JSON.parse(reserved_words)
+$nazvy_ktere_neprejmenovavat = $klicova_slova
+$prejmenovavat = true
+
+
+
+# zpracovani parametru z prikaz radky
+i = 0
+while i < ARGV.length
+  case ARGV[i]
+  when "-in"
+    i+=1
+    $javascriptIn = ARGV[i]
+    #defaultně výstup jako něco.min.js
+    $javascriptOut = $javascriptIn.gsub(/\.([^.]*)$/, '.min.\1')
+  when "-out"
+    i+=1
+    $javascriptOut = ARGV[i]
+  when "-wl"
+    i+=1
+    slova={}
+    File.open(ARGV[i]).each do |line|
+      slova.merge!({"#{line.strip}"=> ""})
+    end
+    $nazvy_ktere_neprejmenovavat.merge!(slova)
+  when "--no-rename"
+    $prejmenovavat = false
+  else
+    abort "Divne parametry, prosim zkontrolujte."
+    
+  end
+  i+=1
+end 
+
+
+
+outputFile = File.new($javascriptOut, "w")
+minify = MinifyFactory.new
+
+vysledek = minify.zmimifikuj(File.read($javascriptIn))
+
+outputFile.print(vysledek) 
+
+

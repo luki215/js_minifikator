@@ -1,0 +1,331 @@
+require 'json'
+
+class MinifyFactory
+  
+  def initialize
+    #hash klicovych js slov, kazdy zaznam obsahuje 2 bool hodnoty - jestli zachovat mezeru pred a mezeru po
+    @klicova_slova = JSON.parse($reserved_words)
+  end
+  
+
+  
+  def zmimifikuj(zdrojak)
+    
+    rozdelZdrojakNaKodAZbytek(zdrojak)
+    
+    #vyresPromenne
+  end 
+=begin  
+  def zpracujRadek(radek)
+    @zpracovavanyRadek = radek
+    vyresKomentare
+    return @zpracovavanyRadek if @zpracovavanyRadek.empty?
+    vyresMezery
+    return @zpracovavanyRadek if @zpracovavanyRadek.empty?
+    
+    @zpracovavanyRadek
+  end
+  
+  
+  private 
+  
+  def pridejPridejPromennouDoVyseparovanych(promenna)
+    @vyseparovanePromenne[:"#{promenna}"]||=0
+    @vyseparovanePromenne[:"#{promenna}"]+=1
+  end
+  def pridejMoznyVyskytPromenne(kus_kodu)
+    promenna = kus_kodu.split(".").first
+    @vyseparovanePromenne[:"#{promenna}"]+=1 unless @vyseparovanePromenne[:"#{promenna}"].nil?
+  end
+  #naplní z @poleJSVyrazu @vyseparovanePromenne vsemi nazvy, ktere lze prejmenovat + jejich cetnosti, od udává index, odkud se má pokračovat, pozor, z @poleJSVyrazu se odstraní všechny "}" znaky
+  
+    
+  #resime az mame vse na jednom radku
+  def vyresPromenne
+    zdrojak = rozdelRadekNaKodARetezce.values_at(* rozdelRadekNaKodARetezce.each_index.select {|i| i.even?}).join("").split(/([^a-zA-Z0-9._]+)/)
+    @poleJSVyrazu = zdrojak
+    
+    separujNazvyPromennych(0)
+    priradKPromennymNahrady
+    projedZdrojakANahradPromenne
+  end
+  
+  def projedZdrojakANahradPromenne
+    zdrojak = rozdelRadekNaKodARetezce
+    @zpracovavanyRadek = ""
+    zdrojak.each_with_index do |kod, i|
+      if i%2!=0
+        @zpracovavanyRadek += kod
+      else
+        unless kod.nil?
+          a = kod.split(/([^a-zA-Z0-9._]+)/) || 
+          #puts a.inspect
+          a.map! do |cast_kodu|
+            if(@vyseparovanePromenne.key?(:"#{cast_kodu.split(".")[0]}"))
+              cast_kodu.sub!(/([^\.]+)/, @vyseparovanePromenne[:"#{cast_kodu.split(".")[0]}"])
+            end
+            cast_kodu
+          end        
+          #puts a.inspect
+          @zpracovavanyRadek += a.join("")
+        end
+      end    
+    end    
+    #puts @zpracovavanyRadek
+  end
+  
+  
+  #seradi vyseparovane promenne podle cetnosi a priradi jim co nejmensi znak
+  def priradKPromennymNahrady
+    zdroj_znaky = ('A'..'Z').to_a + ('a'..'z').to_a
+    prom_prefix = ""
+    i = 0
+    @vyseparovanePromenne = @vyseparovanePromenne.sort_by{ |k, v| v }.reverse
+    @vyseparovanePromenne.map! do |polozka|
+        polozka[1] = prom_prefix + (zdroj_znaky[i] || "")
+        if i == zdroj_znaky.size-1
+          if(prom_prefix.empty?)
+            prom_prefix = "a"
+          else
+            prom_prefix.next!
+          end        
+        end    
+        i+=1
+        polozka
+    end
+    @vyseparovanePromenne =  @vyseparovanePromenne.to_h
+  end
+  
+  #projdeme zdrojak a priradime cetnosti k jednotlivym promennym
+  def separujNazvyPromennych(od)
+    i = od
+    insideVarDefinition = false
+    while i < @poleJSVyrazu.size do
+      
+      #vyseparovani funkcí
+      if(@poleJSVyrazu[i] == "function")
+        #takova deklarace: var a=function(promenna, promenna)
+        if @poleJSVyrazu[i+1].include?("(")
+          i+=1
+        #takova deklarace: function a(promenna, promenna)
+        else
+          promenna = @poleJSVyrazu[i+2]
+          pridejPridejPromennouDoVyseparovanych(promenna)
+          i+=3
+        end
+        until @poleJSVyrazu[i].include?(")") 
+          i+=1
+          if @poleJSVyrazu[i].include?(",") 
+            next
+          end
+          unless @poleJSVyrazu[i].include?(")")
+            promenna = @poleJSVyrazu[i]
+            pridejPridejPromennouDoVyseparovanych(promenna)
+          end
+        end
+        next
+      end
+      
+      #vyseparovani slov hned za var
+      if(@poleJSVyrazu[i] == "var")
+        #za mezerou prvni slovo
+        promenna = @poleJSVyrazu[i+2]
+        pridejPridejPromennouDoVyseparovanych(promenna)
+        insideVarDefinition = true
+        i+=3
+        next
+      end
+      
+      #vyseparovani dalsich promennych ve var - za carkou
+      if insideVarDefinition 
+        if @poleJSVyrazu[i].include?('(') 
+          until @poleJSVyrazu[i].include?(')') 
+            i+=1
+            next
+          end
+        end
+        if  @poleJSVyrazu[i].include?(';')
+          insideVarDefinition = false
+          next  
+        end
+        if @poleJSVyrazu[i].include?(',') 
+          promenna = @poleJSVyrazu[i+1]
+          pridejPridejPromennouDoVyseparovanych(promenna)
+          i+=1
+          next
+        end
+      end
+      
+      #prace s bloky
+      if @poleJSVyrazu[i].include?("{}")
+        @poleJSVyrazu[i].gsub!(/[{][}]/, "")
+      end
+      #dalsi blok => skocime do rekurze
+      if(@poleJSVyrazu[i].include?("{") )
+        @pocetl+=1
+        i = separujNazvyPromennych(i+1)
+        if (@poleJSVyrazu[i]).include?("}")
+          @poleJSVyrazu[i] = @poleJSVyrazu[i].gsub(/^[^}]*}/, "") || ""    
+          return i
+        end
+      end
+      
+      #konci blok => vyskocime z rekurze
+      if(@poleJSVyrazu[i].include?("}"))   
+        @poleJSVyrazu[i] = @poleJSVyrazu[i].gsub(/^[^}]*}/, "") || ""
+        return i
+      end   
+      
+      
+      #mozna se jedna o nejakou promennou, pricteme kdyztak jeji vyskyt
+      pridejMoznyVyskytPromenne(@poleJSVyrazu[i]) if i%2 == 0 and !insideVarDefinition
+      i+=1
+    end
+  end
+  
+  
+  #zpracovává komentáře.. je to sračka, musí řešit jen pokud to není uvnitř řetězce... nejde ale použít rozdelNaKodARetezce, protože ten by to rozdělil i podle apostrofů v komentářích a tak...
+  def vyresKomentare(zdrojak)
+    #je v zakomentovaném
+    if @status[:inComment] 
+      if @zpracovavanyRadek.include?("*/") 
+        @zpracovavanyRadek = @zpracovavanyRadek.split("*/").drop(1).join("*/")
+        @status[:inComment] = false
+        vyresKomentare if @zpracovavanyRadek.include?("/*")
+      else
+        @zpracovavanyRadek = ""
+      end        
+    #není v zakomentovaném
+    else      
+      @zpracovavanyRadek = (@zpracovavanyRadek.gsub!("/*", "*/") || @zpracovavanyRadek).split("*/")
+      @status[:inComment] = (@zpracovavanyRadek.size%2==0)? true : false
+      @zpracovavanyRadek = @zpracovavanyRadek.values_at(* @zpracovavanyRadek.each_index.select {|i| i.even?}).join(" ")
+      #jednoradkove komenty
+      if @zpracovavanyRadek.include?("//")
+        @zpracovavanyRadek = @zpracovavanyRadek.split("//").first;
+      end
+    end
+    
+  end 
+=end
+
+
+ 
+  # naplni tridu kod a zbytek  
+  def rozdelZdrojakNaKodAZbytek(zdrojak)
+
+    #pokud jsme uprostřed toho co není kód, tak čím se to ukončí (" nebo ' nebo  */ ...), jinak je nil
+    aktualni_oddelovac = nil
+
+    #pomocna promenna, uchovava, do ktere pozice jiz mame znaky zpracovane
+    konec_zpracovani = 0
+    zdrojak.chars.each_with_index do |c, i|
+      
+      #preskakuje znaky v pripade, ze uz jsme je zpracovali
+      if(aktualni_oddelovac.nil? and i < konec_) 
+        next
+      end 
+            
+      #zacina retezec
+      if aktualni_oddelovac.nil? and (c=="'" or c == '"' or c == "/")          
+          indexVPoli+=1     
+        retezce_neretezce[indexVPoli]||=""
+        retezce_neretezce[indexVPoli]+= c
+        aktualni_oddelovac = c
+      #pokracuje retezec
+      elsif aktualni_oddelovac.nil? or aktualni_oddelovac!=c
+        retezce_neretezce[indexVPoli]||=""
+        retezce_neretezce[indexVPoli]+= c
+      #konci retezec
+      else         
+          retezce_neretezce[indexVPoli]+= c
+          indexVPoli+=1
+          aktualni_oddelovac = nil
+      end
+      
+      
+              
+      #resi regexy
+      if aktualni_oddelovac.nil? 
+        if(c=="/")   
+          konec_zpracovani = zdrojak.index(/[\/][mgi]{0,3}\s*[;),]/, i) 
+          #pokud je jeste nejake lomitko mezi koncem regexu a aktualni pozici, je to deleni nebo neco podobneho => zahodit
+          konec_zpracovani = nil if !konec_zpracovani.nil? and !zdrojak.slice(i, konec_zpracovani-i).index(/[^\\][\/]/, 1).nil?
+          if konec_zpracovani.nil?
+            #asi šlo o dělení nebo něco jiného co má v sobě /
+            konec_zpracovani = 0
+          else
+            #pricist velikost oddelovace konce regexu od zbytku
+            konec_zpracovani += (zdrojak.match(/[\/][mgi]{0,3}\s*[;),]/, i)[0]).size - 1
+            KodAZbytek.pridejZbytek( zdrojak.slice(i, konec_zpracovani-i) )
+            next
+          end
+        end
+      end
+      
+      
+      
+    end
+    retezce_neretezce
+  end
+  
+
+    #zpracovává bílé znaky.. 
+  def vyresMezery
+    # prazdne radky
+    if @zpracovavanyRadek.strip.empty?
+      @zpracovavanyRadek = ""
+      return true    
+    end
+    
+    #odstranime zbytecne mezery pred a za radkem
+    @zpracovavanyRadek.strip!
+    retezce_neretezce = rozdelRadekNaKodARetezce
+    @zpracovavanyRadek = ""
+    retezce_neretezce.each_with_index do |kod, i|
+      
+      #retezec, nesahat na nej
+      if i%2!=0
+        @zpracovavanyRadek+= kod || ''
+      else   
+        kod ||=""    
+        kod = kod.split(/\s+/)
+        kod.each do |word|
+            #zacina slovem - je moznost pridat mezeru zleva
+           if !(word =~ /^[\w]/).nil?
+              vybrane = word.slice(0, (word.index( /[\W]/) || word.length  ) )
+              @zpracovavanyRadek+=" " if (@klicova_slova.has_key?(vybrane) and (@klicova_slova["#{vybrane}"][0]))
+            end
+            
+            @zpracovavanyRadek+=  word
+            
+            #konci slovem - je moznost pridat mezeru zprava
+            if !(word =~ /[\w]$/).nil?
+              vybrane = word.slice( (word.rindex( /[\W]/) || -1 )+1, word.length )
+              @zpracovavanyRadek+=" " if (@klicova_slova.has_key?(vybrane) and (@klicova_slova["#{vybrane}"][1]))
+            end
+        end     
+      end
+    end    
+  end
+  
+
+end
+
+#uchovava pole kodu rozdeleneho na veci, které chceme nechat tak a kod - kod je v lichych, retezce v sudych indexech
+class KodAZbytek
+  @@kod_a_zbytek = []
+  #index v poli retezce_neretezce
+  indexVPoli = 0
+  def pridejKod(kod)
+    indexVPoli+=1 if indexVPoli.odd?
+    @@kod_a_zbytek[indexVPoli] = kod    
+    indexVPoli+=1
+  end 
+  
+  def pridejZbytek(zbytek)
+    indexVPoli+=1 if indexVPoli.even?
+    @@kod_a_zbytek[indexVPoli] = zbytek    
+    indexVPoli+=1
+  end  
+end

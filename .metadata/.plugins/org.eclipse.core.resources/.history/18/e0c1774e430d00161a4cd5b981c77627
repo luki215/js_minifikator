@@ -1,0 +1,78 @@
+require 'pry'
+require 'json'
+require_relative "MinifyFactory2"
+
+
+
+# globalni promenne, hlavni fce 
+#$javascriptIn = "../angular.js/src/Angular_orig.js"
+$javascriptIn = "#{File.dirname(__FILE__)}/../angular.js/src/zkouska.js"
+$javascriptOut = "#{File.dirname(__FILE__)}/../angular.js/src/Angular.js"
+#reservovaná slova
+reserved_words = File.read("#{File.dirname(__FILE__)}/javascript_reserved.json");
+$klicova_slova = JSON.parse(reserved_words)
+$nazvy_ktere_neprejmenovavat = $klicova_slova
+
+
+
+
+# zpracovani parametru z prikaz radky
+i = 0
+while i < ARGV.length
+  
+  case ARGV[i]
+  when "-in"
+    i+=1
+    $javascriptIn = ARGV[i]
+    #defaultně výstup jako něco.min.js
+    $javascriptOut = $javascriptIn.gsub(/\.([^.]*)$/, '.min.\1')
+  when "-out"
+    i+=1
+    $javascriptOut = ARGV[i]
+  when "-wl"
+    i+=1
+    $nazvy_ktere_neprejmenovavat.merge!(JSON.parse(ARGV[i+1])
+  end
+  i+=1
+end 
+
+
+
+
+
+
+
+
+
+
+
+
+$outputFile = File.new($javascriptOut, "w")
+
+
+  def tiskni(co)
+    
+    #co.gsub! "var ", "var\n"    
+    #co.gsub! "function ", "function\n"
+    co.each_line do |line|
+      $outputFile.print(line)     
+      print(line) 
+    end
+    
+  end
+
+ minify = MinifyFactory.new
+
+=begin
+file = ""
+File.open($javascriptIn, "r") do |f|
+  f.each_line do |line|
+    file+=line
+  end
+end
+=end
+    vysledek =minify.zmimifikuj(File.read($javascriptIn))
+    #tiskni(vysledek)
+
+
+

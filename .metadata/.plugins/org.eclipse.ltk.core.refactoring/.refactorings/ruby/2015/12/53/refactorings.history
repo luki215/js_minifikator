@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;ruby/miniFactory.rb&apos; to &apos;MinifyFactory.rb&apos;" description="Rename resource &apos;miniFactory.rb&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="miniFactory.rb" name="MinifyFactory.rb" stamp="1451323855062" updateReferences="true"/>
+</session>
